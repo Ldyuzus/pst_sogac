@@ -6,16 +6,35 @@ use App\Http\Controllers\AdminRequisitoController;
 use App\Http\Controllers\AdminTipoSolicitudController;
 use App\Http\Controllers\PreguntasFrecuentesController;
 use App\Http\Controllers\UserSolicitudController;
+use App\Http\Controllers\LoginController;
+use App\Http\Controllers\RegisterController;
 
 
-route::get('/', function () {
+Route::get('/', function () {
     return view('app');
 });
 
-route::prefix('user')->group(function () {
+// ============================================================
+// LOGIN / LOGOUT
+// El LoginController ya existía completo, pero no tenía ninguna
+// ruta apuntándole todavía. Sin esto, Auth::id() nunca sabría
+// quién es el estudiante al momento de crear una solicitud.
+// ============================================================
+Route::get('/login', [LoginController::class, 'mostrarFormulario'])->name('login');
+Route::post('/login', [LoginController::class, 'procesarLogin'])->name('login.post');
+Route::post('/logout', [LoginController::class, 'cerrarSesion'])->name('logout');
 
-    route::get('/dashboard', function () { return view('user.index'); 
-    });
+// ============================================================
+// GRUPO ESTUDIANTE
+// La ruta original apuntaba a view('user.index'), que no existe
+// (el archivo real es user.dashboard) — por eso tiraba error.
+// Ahora sí pasa por el controlador, que filtra los trámites
+// disponibles y arma el formulario de cada uno.
+// ============================================================
+Route::middleware('auth')->prefix('user')->group(function () {
+    Route::get('/dashboard', [UserSolicitudController::class, 'index'])->name('dashboard');
+    Route::get('/tramites/{id}/solicitar', [UserSolicitudController::class, 'create'])->name('user.tramites.solicitar');
+    Route::post('/tramites/{id}/solicitar', [UserSolicitudController::class, 'store'])->name('user.tramites.store');
 });
 
 // ============================================================
@@ -36,7 +55,12 @@ Route::prefix('admin')->group(function () {
 
     // CRUD de los TRÁMITES en sí (tipo_solicitudes): aquí es donde el admin
     // crea el trámite, define su ventana de fechas y le asigna requisitos.
-    Route::resource('tipos-solicitud', AdminTipoSolicitudController::class)->names('admin.tipos-solicitud');
+    // ->except(['show']): no existe (ni hace falta) una pantalla de "ver un
+    // solo trámite" separada de "editar" — sin esto, entrar a
+    // /admin/tipos-solicitud/{id} directo tiraba un error 500.
+    Route::resource('tipos-solicitud', AdminTipoSolicitudController::class)
+        ->except(['show'])
+        ->names('admin.tipos-solicitud');
     Route::patch('/tipos-solicitud/{id}/alternar-estado', [AdminTipoSolicitudController::class, 'alternarEstado'])
         ->name('admin.tipos-solicitud.alternar-estado');
 });

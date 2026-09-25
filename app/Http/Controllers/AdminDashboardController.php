@@ -81,7 +81,7 @@ class AdminDashboardController extends Controller
     }
 
     // Cambiar estado (Equivale a action=aprobar o action=rechazar)
-    public function cambiarEstado($id, $accion)
+    public function cambiarEstado(Request $request, $id, $accion)
     {
         // $accion puede ser 'aprobar' o 'rechazar'
         $solicitud = Solicitud::findOrFail($id);
@@ -106,6 +106,16 @@ class AdminDashboardController extends Controller
         $mensaje = ($accion === 'aprobar') 
             ? 'La solicitud ha sido aprobada con éxito.' 
             : 'La solicitud ha sido rechazada.';
+
+        // Si el pedido viene del JS del modal (fetch), respondemos con un
+        // simple "OK" en vez de redirigir. Así el modal se queda abierto
+        // y solo actualiza el color, sin recargar toda la página.
+        if ($request->ajax()) {
+            return response()->json([
+                'estado' => $nombreEstado,
+                'mensaje' => $mensaje,
+            ]);
+        }
 
         return redirect()->route('admin.dashboard')->with('success', $mensaje);
     }

@@ -42,6 +42,19 @@
               </span>
             </td>
             <td style="text-align: right; white-space: nowrap;">
+              <button
+                type="button"
+                class="btn btn--sm ver-detalle"
+                style="background: #2563eb; color: white; margin-right: 4px;"
+                data-nombre="{{ $s->usuario->usu_primer_nombre }} {{ $s->usuario->usu_primer_apellido }}"
+                data-cedula="{{ $s->usuario->usu_numero_documento }}"
+                data-tipo="{{ $s->tipoSolicitud->tsi_nombre_tipo }}"
+                data-fecha="{{ \Carbon\Carbon::parse($s->sol_fecha_creacion)->format('d/m/Y H:i') }}"
+                data-estado="{{ $estado }}"
+                data-descripcion="{{ $s->sol_motivo_detallado ?? 'Sin motivo detallado' }}"
+                data-aprobar-url="{{ route('admin.dashboard.estado', ['id' => $s->sol_id, 'accion' => 'aprobar']) }}"
+                data-rechazar-url="{{ route('admin.dashboard.estado', ['id' => $s->sol_id, 'accion' => 'rechazar']) }}"
+              >Detalle</button>
               @if($estado === 'pendiente')
                 <a href="{{ route('admin.dashboard.estado', ['id' => $s->sol_id, 'accion' => 'aprobar']) }}" class="btn btn--sm" style="background: #22a35a; color: white; margin-right: 4px;">Aprobar</a>
                 <a href="{{ route('admin.dashboard.estado', ['id' => $s->sol_id, 'accion' => 'rechazar']) }}" class="btn btn--danger btn--sm" onclick="return confirm('¿Seguro que deseas rechazar esta solicitud?')">Rechazar</a>

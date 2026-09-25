@@ -29,18 +29,50 @@
     </nav>
 
     <div class="container">
-            <div class="table-responsive rounded shadow-sm">
-                <table style="height: 250px;" class="table table-hover table-bordered mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Trámites de Control de estudio</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+        @if(session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
 
-                    </tbody>
-                </table>
-            </div>
+        <div class="table-responsive rounded shadow-sm">
+            <table class="table table-hover table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Trámites de Control de estudio</th>
+                        <th>Disponible hasta</th>
+                        <th style="width:140px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($tramites as $tramite)
+                        <tr>
+                            <td>
+                                <strong>{{ $tramite->tsi_nombre_tipo }}</strong>
+                                @if($tramite->tsi_descripcion)
+                                    <div class="text-muted" style="font-size:0.85rem;">{{ $tramite->tsi_descripcion }}</div>
+                                @endif
+                            </td>
+                            <td class="text-muted" style="font-size:0.85rem;">
+                                {{ $tramite->tsi_fecha_fin?->format('d/m/Y') ?? 'Sin fecha límite' }}
+                            </td>
+                            <td>
+                                <a href="{{ route('user.tramites.solicitar', $tramite->tsi_id) }}" class="btn btn-danger btn-sm rounded-pill">
+                                    Solicitar
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">
+                                No hay trámites disponibles por ahora. Vuelve a revisar más adelante.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
-<div>
+</div>
 @endsection

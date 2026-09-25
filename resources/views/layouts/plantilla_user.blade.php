@@ -17,7 +17,7 @@
       </div>
       <nav class="nav">
         <a>Inicio</a>
-        <span class="nav__user">{{ Auth::user()->nombre ?? 'Invitado' }}</span>
+        <span class="nav__user">{{ Auth::user()->usu_primer_nombre ?? 'Invitado' }}</span>
       </nav>
     </div>
   </header>

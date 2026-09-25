@@ -65,6 +65,35 @@
         .badge-punto--aprobada .badge-punto__dot { background: #22a35a; }
         .badge-punto--rechazada { background: #fdd6d6; color: var(--red-dark); }
         .badge-punto--rechazada .badge-punto__dot { background: var(--red); }
+
+        /* Mismo look que el buscador, para el select "Todos los trámites" */
+        #tipo_solicitud {
+          padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--gray-200); font-size: 0.95rem;
+        }
+        #tipo_solicitud:focus { border-color: var(--red); outline: none; }
+
+        /* Modal de detalle con barra de color arriba según el estado */
+        .modal-overlay {
+          position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000;
+          display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-caja {
+          background: white; border-radius: 12px; width: 100%; max-width: 540px;
+          max-height: 85vh; overflow-y: auto; position: relative;
+        }
+        .modal-barra { height: 6px; border-radius: 12px 12px 0 0; }
+        .modal-barra--pendiente { background: #d69a00; }
+        .modal-barra--aprobada { background: #22a35a; }
+        .modal-barra--rechazada { background: var(--red); }
+        .modal-cuerpo { padding: 24px 28px 28px; }
+        .modal-cerrar {
+          position: absolute; top: 16px; right: 16px; background: var(--gray-100); border: none;
+          width: 30px; height: 30px; border-radius: 50%; font-size: 18px; cursor: pointer; color: var(--gray-700);
+        }
+        .modal-fila { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
+        .modal-fila strong { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-400); }
+        .modal-fila span { font-size: 0.95rem; color: var(--black); }
+        .modal-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; gap: 10px; }
       </style>
 
       {{-- Barra de búsqueda. Ya NO se envía como formulario tradicional:
@@ -105,9 +134,33 @@
             >{{ $etiqueta }}</a>
           @endforeach
         </div>
-
-        <a href="#" id="limpiar-filtros" class="btn btn--sm" style="background: var(--gray-200); color: var(--black); {{ (request('busqueda') || request('tipo_solicitud') || request('estado')) ? '' : 'display:none;' }}">Limpiar filtros</a>
       </form>
+
+      {{-- Modal de detalle. Vive FUERA de #resultados-wrapper para que no se borre
+           cada vez que se reemplaza la tabla al buscar/filtrar. --}}
+      <div id="modal-detalle" class="modal-overlay" style="display:none;">
+        <div class="modal-caja">
+          <div id="modal-barra" class="modal-barra"></div>
+          <div class="modal-cuerpo">
+            <button type="button" id="cerrar-modal" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+            <h3 id="modal-titulo" style="margin: 0 0 2px; font-size: 1.2rem;"></h3>
+            <p id="modal-cedula" style="color: var(--gray-700); font-size: 0.85rem; margin: 0 0 20px;"></p>
+
+            <div class="modal-fila"><strong>Tipo de trámite</strong><span id="modal-tipo"></span></div>
+            <div class="modal-fila"><strong>Fecha de la solicitud</strong><span id="modal-fecha"></span></div>
+            <div class="modal-fila"><strong>Estado actual</strong><span id="modal-estado"></span></div>
+            <div class="modal-fila"><strong>Descripción completa</strong><span id="modal-descripcion" style="white-space: pre-wrap;"></span></div>
+
+            <div id="modal-acciones" style="margin-top: 16px; display: flex; gap: 10px;"></div>
+
+            <div class="modal-nav">
+              <button type="button" id="modal-anterior" class="btn btn--sm" style="background: var(--gray-200); color: var(--black);">&laquo; Anterior</button>
+              <span id="modal-contador" style="font-size: 0.8rem; color: var(--gray-400);"></span>
+              <button type="button" id="modal-siguiente" class="btn btn--sm" style="background: var(--gray-200); color: var(--black);">Siguiente &raquo;</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {{-- Este div es lo único que se reemplaza cuando se busca/filtra/pagina --}}
       <div id="resultados-wrapper">
@@ -120,7 +173,6 @@
           const selectTipo = document.getElementById('tipo_solicitud');
           const wrapper = document.getElementById('resultados-wrapper');
           const tabs = document.querySelectorAll('.tab-estado');
-          const limpiar = document.getElementById('limpiar-filtros');
           const urlBase = "{{ route('admin.dashboard') }}";
 
           // Estado actual de los filtros (arranca con lo que ya viene en la URL)
@@ -143,7 +195,6 @@
             if (selectTipo.value) params.set('tipo_solicitud', selectTipo.value);
             if (estadoActual) params.set('estado', estadoActual);
             const query = params.toString();
-            limpiar.style.display = query ? 'inline-block' : 'none';
             buscar(urlBase + (query ? '?' + query : ''));
           }
 
@@ -166,16 +217,6 @@
             });
           });
 
-          limpiar.addEventListener('click', function (e) {
-            e.preventDefault();
-            inputBusqueda.value = '';
-            selectTipo.value = '';
-            estadoActual = '';
-            tabs.forEach(function (t) { t.classList.remove('activa'); });
-            tabs[0].classList.add('activa'); // "Todas"
-            construirUrlYBuscar();
-          });
-
           // Los links de paginación se recrean cada vez que se reemplaza el HTML,
           // así que "escuchamos" los clics en el contenedor padre (delegación de eventos)
           // en vez de engancharlos uno por uno.
@@ -184,7 +225,140 @@
             if (link) {
               e.preventDefault();
               buscar(link.getAttribute('href'));
+              return;
             }
+
+            const boton = e.target.closest('.ver-detalle');
+            if (boton) {
+              const filas = Array.from(wrapper.querySelectorAll('.ver-detalle'));
+              const indice = filas.indexOf(boton);
+              abrirModal(filas, indice);
+            }
+          });
+
+          // --- Modal de detalle, con Anterior/Siguiente entre las solicitudes de la página actual ---
+          const modal = document.getElementById('modal-detalle');
+          const modalBarra = document.getElementById('modal-barra');
+          const modalTitulo = document.getElementById('modal-titulo');
+          const modalCedula = document.getElementById('modal-cedula');
+          const modalTipo = document.getElementById('modal-tipo');
+          const modalFecha = document.getElementById('modal-fecha');
+          const modalEstado = document.getElementById('modal-estado');
+          const modalDescripcion = document.getElementById('modal-descripcion');
+          const modalAcciones = document.getElementById('modal-acciones');
+          const modalContador = document.getElementById('modal-contador');
+          const btnAnterior = document.getElementById('modal-anterior');
+          const btnSiguiente = document.getElementById('modal-siguiente');
+
+          let listaActual = [];
+          let indiceActual = 0;
+
+          function abrirModal(filas, indice) {
+            listaActual = filas;
+            indiceActual = indice;
+            pintarModal();
+            modal.style.display = 'flex';
+          }
+
+          function pintarModal() {
+            const data = listaActual[indiceActual].dataset;
+
+            modalBarra.className = 'modal-barra modal-barra--' + data.estado;
+            modalTitulo.textContent = data.nombre;
+            modalCedula.textContent = 'C.I: ' + data.cedula;
+            modalTipo.textContent = data.tipo;
+            modalFecha.textContent = data.fecha;
+            modalEstado.textContent = data.estado.charAt(0).toUpperCase() + data.estado.slice(1);
+            modalDescripcion.textContent = data.descripcion;
+            modalContador.textContent = (indiceActual + 1) + ' de ' + listaActual.length + ' (esta página)';
+
+            if (data.estado === 'pendiente') {
+              modalAcciones.innerHTML =
+                '<button type="button" id="modal-btn-aprobar" class="btn" style="background:#22a35a; color:white; flex:1;">Aprobar</button>' +
+                '<button type="button" id="modal-btn-rechazar" class="btn btn--danger" style="flex:1;">Rechazar</button>';
+
+              document.getElementById('modal-btn-aprobar').addEventListener('click', function () {
+                resolverDesdeModal(data.aprobarUrl, 'aprobada');
+              });
+              document.getElementById('modal-btn-rechazar').addEventListener('click', function () {
+                if (confirm('¿Seguro que deseas rechazar esta solicitud?')) {
+                  resolverDesdeModal(data.rechazarUrl, 'rechazada');
+                }
+              });
+            } else {
+              modalAcciones.innerHTML = '<p style="color:var(--gray-400); font-size:0.85rem; font-style:italic; margin:0;">Esta solicitud ya fue resuelta.</p>';
+            }
+
+            btnAnterior.disabled = indiceActual === 0;
+            btnAnterior.style.opacity = btnAnterior.disabled ? '0.4' : '1';
+            btnSiguiente.disabled = indiceActual === listaActual.length - 1;
+            btnSiguiente.style.opacity = btnSiguiente.disabled ? '0.4' : '1';
+          }
+
+          function cerrarModal() {
+            modal.style.display = 'none';
+          }
+
+          // Aprueba/rechaza SIN recargar la página ni cerrar el modal.
+          // Actualiza el estado en el botón de la fila (fuente de la verdad)
+          // y vuelve a pintar el modal con el color/estado nuevo.
+          function resolverDesdeModal(url, nuevoEstado) {
+            const botonesAccion = modalAcciones.querySelectorAll('button');
+            botonesAccion.forEach(function (b) { b.disabled = true; b.style.opacity = '0.6'; });
+
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+              .then(function (respuesta) { return respuesta.json(); })
+              .then(function () {
+                // Actualiza el data-estado del botón "Detalle" de esa fila en la tabla de fondo
+                listaActual[indiceActual].dataset.estado = nuevoEstado;
+                // Repinta el modal: cambia la barra de color y quita Aprobar/Rechazar
+                pintarModal();
+                // Actualiza también la fila visualmente (badge + columna de acciones)
+                actualizarFilaEnTabla(listaActual[indiceActual]);
+              })
+              .catch(function () {
+                alert('No se pudo actualizar la solicitud. Intenta de nuevo.');
+                botonesAccion.forEach(function (b) { b.disabled = false; b.style.opacity = '1'; });
+              });
+          }
+
+          // Actualiza el badge de estado y la columna de Acciones de la fila en la tabla,
+          // sin volver a pedirle nada al servidor (ya sabemos el resultado).
+          function actualizarFilaEnTabla(botonDetalle) {
+            const fila = botonDetalle.closest('tr');
+            if (!fila) return;
+            const nuevoEstado = botonDetalle.dataset.estado;
+            const etiqueta = nuevoEstado.charAt(0).toUpperCase() + nuevoEstado.slice(1);
+
+            const badge = fila.querySelector('.badge-punto');
+            if (badge) {
+              badge.className = 'badge-punto badge-punto--' + nuevoEstado;
+              badge.innerHTML = '<span class="badge-punto__dot"></span>' + etiqueta;
+            }
+
+            // Como ya no está pendiente, quitamos los botones Aprobar/Rechazar de la fila
+            const celdaAcciones = fila.querySelector('td:last-child');
+            if (celdaAcciones) {
+              const aprobar = celdaAcciones.querySelector('a[style*="22a35a"]');
+              const rechazar = celdaAcciones.querySelector('a.btn--danger');
+              if (aprobar) aprobar.remove();
+              if (rechazar) rechazar.remove();
+            }
+          }
+
+          btnAnterior.addEventListener('click', function () {
+            if (indiceActual > 0) { indiceActual--; pintarModal(); }
+          });
+          btnSiguiente.addEventListener('click', function () {
+            if (indiceActual < listaActual.length - 1) { indiceActual++; pintarModal(); }
+          });
+
+          document.getElementById('cerrar-modal').addEventListener('click', cerrarModal);
+          modal.addEventListener('click', function (e) { if (e.target === modal) cerrarModal(); });
+          document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') cerrarModal();
+            if (modal.style.display === 'flex' && e.key === 'ArrowRight') btnSiguiente.click();
+            if (modal.style.display === 'flex' && e.key === 'ArrowLeft') btnAnterior.click();
           });
         })();
       </script>

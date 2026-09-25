@@ -102,7 +102,7 @@
             {{-- Elegir si se crea ya activo (visible para estudiantes) o como borrador --}}
             <div style="display:flex; align-items:center; gap:8px; margin: 20px 0;">
                 <input type="checkbox" name="activar_ahora" id="activar_ahora" value="1" {{ old('activar_ahora') ? 'checked' : '' }} />
-                <label for="activar_ahora" style="margin:0;">Activar de inmediato (los estudiantes lo verán ni bien lo guarde)</label>
+                <label for="activar_ahora" style="margin:0;">Activar de inmediato (Apenas lo vean los estudiantes lo guarden)</label>
             </div>
 
             <div class="actions">
