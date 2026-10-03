@@ -224,4 +224,29 @@
     @endif
 
 </div>
+
+<!-- Modal Nuevo Ticket -->
+<div id="modalNuevoTicket" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000;">
+    <div class="card modal-content" style="position: relative; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+        <h3 style="margin-top: 0; color: var(--black);">Nuevo Ticket de Soporte</h3>
+        <p style="color: var(--gray-700); font-size: 0.9rem; margin-bottom: 20px;">Describe tu problema con detalle para abrir el chat con un administrador.</p>
+        
+        <!-- Apunta a la misma ruta de iniciar chat, pero con el formulario enriquecido -->
+        <form action="{{ route('user.chat.iniciar') }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 15px;">
+            @csrf
+            <div>
+                <label style="font-size: 0.85rem; font-weight: bold; color: var(--black);">Mensaje:</label>
+                <textarea name="mch_cuerpo" rows="4" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; margin-top: 5px;" placeholder="Ej: Tengo un problema con el trámite..."></textarea>
+            </div>
+            <div>
+                <label style="font-size: 0.85rem; font-weight: bold; color: var(--black);">Adjuntar evidencia (Opcional):</label><br>
+                <input type="file" name="imagen" accept="image/*" style="margin-top: 5px;">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
+                <button type="button" onclick="document.getElementById('modalNuevoTicket').style.display='none'" class="btn" style="background: #e2e3e5; color: #333; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                <button type="submit" class="btn btn--primary" style="background: var(--red); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Enviar y Crear Ticket</button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection

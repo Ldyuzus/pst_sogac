@@ -38,7 +38,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
     Route::get('/citas', [UserSolicitudController::class, 'misCitas'])->name('user.citas');
     Route::get('/tramites/{id}/solicitar', [UserSolicitudController::class, 'create'])->name('user.tramites.solicitar');
     Route::post('/tramites/{id}/solicitar', [UserSolicitudController::class, 'store'])->name('user.tramites.store');
-    // Módulo de Soporte (Solo Lectura para usuarios)
+    // Módulo de Ayuda: preguntas frecuentes (solo lectura para el usuario)
     Route::get('/soporte', [PreguntasFrecuentesController::class, 'index'])->name('soporte.index');
 
     // Módulo Chat Estudiante: URLs bajo /user/soporte/chat/...
