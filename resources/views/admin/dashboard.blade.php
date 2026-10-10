@@ -149,6 +149,8 @@
             <p id="modal-cedula" style="color: var(--gray-700); font-size: 0.85rem; margin: 0 0 20px;"></p>
 
             <div class="modal-fila"><strong>Tipo de trámite</strong><span id="modal-tipo"></span></div>
+            <div class="modal-fila"><strong>Carrera (PNF)</strong><span id="modal-carrera"></span></div>
+            <div class="modal-fila"><strong>Semestre / Trayecto</strong><span id="modal-semestre"></span></div>
             <div class="modal-fila"><strong>Fecha de la solicitud</strong><span id="modal-fecha"></span></div>
             <div class="modal-fila"><strong>Estado actual</strong><span id="modal-estado"></span></div>
             <div class="modal-fila"><strong>Descripción completa</strong><span id="modal-descripcion" style="white-space: pre-wrap;"></span></div>
@@ -235,6 +237,8 @@
           const modalTitulo = document.getElementById('modal-titulo');
           const modalCedula = document.getElementById('modal-cedula');
           const modalTipo = document.getElementById('modal-tipo');
+    const modalCarrera = document.getElementById('modal-carrera');
+    const modalSemestre = document.getElementById('modal-semestre');
           const modalFecha = document.getElementById('modal-fecha');
           const modalEstado = document.getElementById('modal-estado');
           const modalDescripcion = document.getElementById('modal-descripcion');
@@ -260,6 +264,11 @@
             modalTitulo.textContent = data.nombre;
             modalCedula.textContent = 'C.I: ' + data.cedula;
             modalTipo.textContent = data.tipo;
+    // La carrera y el semestre son parte de la ficha del estudiante, no del
+    // tramite. Pnf::nombreCarrera() devuelve "Sin registrar" cuando el dato no
+    // esta, para que se note que falta en vez de ver una linea vacia.
+    modalCarrera.textContent = data.carrera || 'Sin registrar';
+    modalSemestre.textContent = data.semestre || 'Sin registrar';
             modalFecha.textContent = data.fecha;
             modalEstado.textContent = data.estado.charAt(0).toUpperCase() + data.estado.slice(1);
             modalDescripcion.textContent = data.descripcion;

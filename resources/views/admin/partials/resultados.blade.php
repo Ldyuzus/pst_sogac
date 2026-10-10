@@ -49,6 +49,8 @@
                 data-nombre="{{ $s->usuario->usu_primer_nombre }} {{ $s->usuario->usu_primer_apellido }}"
                 data-cedula="{{ $s->usuario->usu_numero_documento }}"
                 data-tipo="{{ $s->tipoSolicitud->tsi_nombre_tipo }}"
+                data-carrera="{{ \App\Pnf::nombreCarrera($s->usuario->usu_pnf) }}"
+                data-semestre="{{ \App\Pnf::nombreTrayecto($s->usuario->usu_trayecto) }}"
                 data-fecha="{{ \Carbon\Carbon::parse($s->sol_fecha_creacion)->format('d/m/Y H:i') }}"
                 data-estado="{{ $estado }}"
                 data-descripcion="{{ $s->sol_motivo_detallado ?? 'Sin motivo detallado' }}"

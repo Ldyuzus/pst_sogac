@@ -2,6 +2,11 @@ import '../css/app.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap';
 
+// El calendario del navegador no se puede disenar con CSS, asi que se sustituye
+// por uno propio con los colores del proyecto. Mejora de forma progresiva: si
+// este archivo no carga, los campos de fecha siguen siendo nativos.
+import './datepicker.js';
+
 import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';

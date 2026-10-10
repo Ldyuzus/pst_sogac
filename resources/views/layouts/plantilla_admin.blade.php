@@ -53,46 +53,6 @@
     }
     .topbar__salir:hover { background: rgba(255, 255, 255, 0.16); }
 
-    /* Quien esta dentro y el botón salir viven en la barra roja. */
-    .topbar__usuario {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-left: auto;
-      padding-left: 16px;
-    }
-    .topbar__nombre {
-      color: var(--white);
-      font-weight: 600;
-      font-size: 0.92rem;
-      white-space: nowrap;
-    }
-    .topbar__rol {
-      background: rgba(255, 255, 255, 0.2);
-      color: var(--white);
-      border-radius: 4px;
-      padding: 3px 9px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-    .topbar__salir {
-      background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.45);
-      border-radius: 8px;
-      color: var(--white);
-      font-family: inherit;
-      font-size: 0.85rem;
-      font-weight: 600;
-      padding: 7px 14px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.2s ease;
-    }
-    .topbar__salir:hover { background: rgba(255, 255, 255, 0.16); }
-
     /* Botón hamburguesa: las tres rayas se convierten en una X.
        Va pegado a la izquierda, antes de la marca. */
     .menu-btn {

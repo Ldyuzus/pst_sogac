@@ -137,9 +137,14 @@
             'titulo' => 'Ayuda',
             'visible' => $usuario?->esAdministrativo(),
             'funciones' => [
+                // Las FAQ se gestionan entre administrador y analista, que es
+                // lo que exigen las rutas admin.preguntas.*. El taquillero entra
+                // a Ayuda solo para atender el chat: sin esto el modulo entero
+                // se le muestra y esos dos enlaces le rebotan con 403.
                 [
                     'ruta' => 'admin.preguntas.index',
                     'texto' => 'Preguntas frecuentes',
+                    'visible' => $esAdminOAnalista,
                     'patrones' => [
                         'admin.preguntas.index',
                         'admin.preguntas.edit',
@@ -150,6 +155,7 @@
                 [
                     'ruta' => 'admin.preguntas.create',
                     'texto' => 'Nueva pregunta',
+                    'visible' => $esAdminOAnalista,
                     'patrones' => ['admin.preguntas.create'],
                 ],
                 [
@@ -194,27 +200,27 @@
                 ['ruta' => 'user.citas', 'texto' => 'Mis citas', 'patrones' => ['user.citas*']],
             ],
         ],
-        // Ayuda eran dos pantallas en un solo modulo desplegable: obligaba a
-        // abrirlo y luego elegir. Ahora son dos entradas propias, cada una un
-        // enlace directo, y ademas se cruzan entre si con un acceso rapido: desde
-        // las preguntas frecuentes al chat y al reves.
+        // Ayuda son dos pantallas que se atienden juntas: las preguntas frecuentes y
+        // el chat. Van en un solo modulo desplegable, igual que el Ayuda del
+        // personal, para que ambos menus se lean igual. Antes eran dos entradas
+        // sueltas cruzadas entre si con un acceso rapio, y esa fila se descuadraba
+        // en pantallas angostas. El contador de la consulta en curso se conserva.
         [
             'ambito' => 'estudiante',
-            'titulo' => 'Preguntas frecuentes',
-            'enlaceDirecto' => true,
-            'enlaceExtra' => ['ruta' => 'user.ayuda.chat.index', 'texto' => 'Chat'],
+            'titulo' => 'Ayuda',
             'funciones' => [
-                ['ruta' => 'user.ayuda.preguntas', 'texto' => 'Preguntas frecuentes', 'patrones' => ['user.ayuda.preguntas']],
-            ],
-        ],
-        [
-            'ambito' => 'estudiante',
-            'titulo' => 'Chat de soporte',
-            'enlaceDirecto' => true,
-            'contador' => $pendientesChat,
-            'contadorTitulo' => 'consulta en curso',
-            'funciones' => [
-                ['ruta' => 'user.ayuda.chat.index', 'texto' => 'Chat de soporte', 'patrones' => ['user.ayuda.chat.*']],
+                [
+                    'ruta' => 'user.ayuda.preguntas',
+                    'texto' => 'Preguntas frecuentes',
+                    'patrones' => ['user.ayuda.preguntas'],
+                ],
+                [
+                    'ruta' => 'user.ayuda.chat.index',
+                    'texto' => 'Chat de soporte',
+                    'patrones' => ['user.ayuda.chat.*'],
+                    'contador' => $pendientesChat,
+                    'contadorTitulo' => 'consulta en curso',
+                ],
             ],
         ],
     ];

@@ -493,12 +493,19 @@ a:hover { color: var(--red-dark); }
 .modal-overlay[data-abierto='1'] { display: flex; }
 
 .modal {
-  /* display:block es imprescindible: el CSS de Bootstrap (que se sigue
-     importando en resources/js/app.js) define ".modal { display: none }" y, al
-     no competir con esta regla, ese display se colaba. Se veía el fondo gris
-     del overlay pero no la caja del diálogo: al pulsar "Nueva consulta" la
-     pantalla quedaba a oscuras y sin forma de cerrar el formulario. */
+  /* Bootstrap secuestra la clase .modal: la define como position:fixed con
+     top:0, left:0, width/height:100% y display:none. Por eso hay que anular
+     sus cuatro propiedades:
+       - display:block  -> sin esto no se ve la caja (solo el fondo gris).
+       - position:relative -> un fixed sale del flujo y el overlay ya no
+         puede centrarlo con align-items/justify-content: por eso aparecia
+         pegado en la esquina superior izquierda.
+       - height:auto  -> con height:100% de Bootstrap la caja se estiraba a
+         pantalla completa en vez de ajustarse a su contenido.
+     El ancho (width/max-width) ya lo sobrescribe esta misma regla. */
   display: block;
+  position: relative;
+  height: auto;
   background: var(--white);
   border-radius: var(--radius);
   padding: 28px;
@@ -539,6 +546,14 @@ a:hover { color: var(--red-dark); }
 }
 .nav__modulo:first-of-type { margin-top: 4px; }
 .nav__modulo:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* Modulo desplegado: sin esto no se distinguia de uno plegado, porque solo
+   cambiaba la flecha. El fondo y el texto en blanco pleno bastan para notarlo. */
+.nav__modulo[aria-expanded='true'] {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--white);
+}
+.nav__modulo[aria-expanded='true'] .nav__chevron { opacity: 1; }
 .nav__modulo.activo { color: var(--white); }
 .nav__chevron {
   width: 14px;
@@ -566,23 +581,13 @@ a:hover { color: var(--red-dark); }
   gap: 8px;
   width: 100%;
   flex: 0 0 auto;
-  padding: 9px 10px 9px 20px;
+  /* Sin punto decorativo: basta con la sangria para leer la jerarquia. */
+  padding: 9px 10px 9px 18px;
   border-radius: 8px;
   color: var(--white);
   text-decoration: none;
   font-size: 0.92rem;
   position: relative;
-}
-.nav__item::before {
-  content: '';
-  position: absolute;
-  left: 11px;
-  top: 50%;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.45);
-  transform: translateY(-50%);
 }
 .nav__item:hover { background: rgba(255, 255, 255, 0.14); }
 
@@ -637,11 +642,175 @@ a:hover { color: var(--red-dark); }
   font-weight: 700;
   line-height: 1;
 }
+/* La opcion abierta se marca solo con el texto en negrita, sin caja: una
+   franja clara dentro del menu se leia como un boton aparte y rompia la
+   lectura del grupo. El modulo ya muestra su propio fondo al desplegarse. */
 .nav__item.activa {
-  background: rgba(255, 255, 255, 0.2);
   font-weight: 700;
 }
-.nav__item.activa::before { background: var(--white); }
+
+/* ============================================================
+   CALENDARIO DE FECHAS PROPIO
+   Sustituye al popup del navegador, que se dibuja fuera de la
+   pagina y no se puede disenar. Lo reemplaza resources/js/datepicker.js
+   ============================================================ */
+.fecha {
+  position: relative;
+  width: 100%;
+}
+.fecha__campo {
+  width: 100%;
+  padding: 11px 44px 11px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: var(--white);
+  color: var(--black);
+  transition: border-color .15s, box-shadow .15s;
+}
+.fecha__campo::placeholder { color: var(--gray-400); }
+.fecha__campo:focus {
+  outline: none;
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(225, 29, 46, 0.15);
+}
+.fecha__campo--error { border-color: var(--red-dark); background: #fdecec; }
+.fecha__campo--vacio { color: var(--gray-400); }
+
+.fecha__disparador {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--gray-700);
+  cursor: pointer;
+}
+.fecha__disparador:hover { color: var(--red); }
+
+.fecha__panel {
+  position: absolute;
+  z-index: 1200;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 292px;
+  max-width: 100%;
+  padding: 12px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  animation: fecha-entra .16s ease-out;
+}
+.fecha__panel[hidden] { display: none; }
+
+@keyframes fecha-entra {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fecha__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.fecha__titulo {
+  flex: 1;
+  text-align: center;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--black);
+  text-transform: capitalize;
+}
+.fecha__nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  color: var(--gray-700);
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.fecha__nav:hover { background: var(--red); border-color: var(--red); color: var(--white); }
+.fecha__nav--anio { font-weight: 700; }
+
+.fecha__dias-semana,
+.fecha__dias {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.fecha__dias-semana {
+  margin-bottom: 4px;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--gray-400);
+}
+.fecha__dia {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--black);
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.fecha__dia:hover:not(:disabled) { background: var(--gray-100); }
+.fecha__dia--vacio { visibility: hidden; }
+.fecha__dia--bloqueada { color: var(--gray-200); cursor: not-allowed; }
+.fecha__dia--hoy { font-weight: 700; color: var(--red); }
+.fecha__dia--elegida { background: var(--red); color: var(--white); font-weight: 700; }
+.fecha__dia--elegida:hover { background: var(--red-dark); }
+.fecha__dia:focus-visible { outline: 2px solid var(--red); outline-offset: -2px; }
+
+.fecha__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--gray-100);
+}
+.fecha__accion {
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gray-700);
+  cursor: pointer;
+}
+.fecha__accion:hover { background: var(--gray-100); color: var(--red); }
+
+/* En pantallas bajas el calendario ocupa el ancho y se apoya abajo. */
+@media (max-width: 560px) {
+  .fecha__panel { width: 100%; }
+}
 
 /* Acordeon de preguntas frecuentes (vista de solo lectura) */
 .faq { display: flex; flex-direction: column; gap: 10px; }
