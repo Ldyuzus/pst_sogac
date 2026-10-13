@@ -22,6 +22,12 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
+        // Cuentas del personal administrativo. Van antes que los seeders de
+        // solicitudes porque los datos de prueba necesitan un administrador al
+        // que atribuirlos, y al final para que quede disponible aunque alguien
+        // corra solo este seeder.
+        $this->call(PersonalAdministrativoSeeder::class);
+
         $this->call(SolicitudesDePruebaSeeder::class);
         $this->call(SolicitudesPanelEstadisticasSeeder::class);
         $this->call(PreguntasFrecuentesDemoSeeder::class);

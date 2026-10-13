@@ -48,9 +48,10 @@ test('la ficha de tratadas renderiza la cita de validación', function () {
     $s = solicitudConHistorial($est, $tipo, ['aprobada']);
 
     Cita::create([
+        'cit_usu_id' => $est->usu_id,
         'cit_sol_id' => $s->sol_id,
+        'cit_motivo' => 'Oficina de Control de Estudios',
         'cit_fecha_hora' => now()->addDays(3)->setTime(9, 30),
-        'cit_lugar' => 'Oficina de Control de Estudios',
         'cit_estado' => 'agendada',
     ]);
 

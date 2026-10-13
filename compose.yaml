@@ -1,3 +1,15 @@
+# Solicitalo — Laravel Sail, con lo que este proyecto necesita encima.
+#
+#   copy .env.example .env        (en Linux: cp)
+#   composer install              Sail necesita vendor/ en el equipo
+#   vendor\bin\sail.bat up -d     (en Linux: ./vendor/bin/sail up -d)
+#
+# El sitio queda en http://localhost y la base en el 5432.
+#
+# Este archivo es el compose.yaml de Sail mas los servicios que el proyecto
+# necesita y Sail no trae. Con esto, `up -d` deja el sistema listo: aplica las
+# migraciones y llena la base de una vez, sin pasos manuales que alguien se
+# salte y luego le aparezca un "no existe la relacion".
 services:
     laravel.test:
         build:
@@ -23,6 +35,75 @@ services:
             - sail
         depends_on:
             - pgsql
+            - migrate
+            - seed
+
+    # --------------------------------------------------------------- migraciones
+    # Corre una vez por arranque y termina. Sail de fabrica no aplica las
+    # migraciones, y este proyecto recibe varias en cada entrega: sin esto,
+    # cada entrega nueva revienta con "no existe la relacion ...".
+    migrate:
+        image: sail-8.5/app
+        depends_on:
+            pgsql:
+                condition: service_healthy
+        # Se salta el start-container de Sail: aqui solo hace falta ejecutar
+        # un comando de artisan.
+        entrypoint: ['php', 'artisan', 'migrate', '--force']
+        restart: 'no'
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+
+    # ----------------------------------------------------------------- seeders
+    # Igual que el de migraciones: llena la base una vez y termina. Los seeders
+    # crean catalogo, estudiantes con solicitudes, preguntas frecuentes, la
+    # configuracion de datos del perfil y las cuentas del personal
+    # administrativo. Son idempotentes, asi que correrlos de mas no rompe nada.
+    seed:
+        image: sail-8.5/app
+        depends_on:
+            migrate:
+                condition: service_completed_successfully
+        entrypoint: ['php', 'artisan', 'db:seed', '--force']
+        restart: 'no'
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+
+    # -------------------------------------------------------------------- cola
+    # La app usa QUEUE_CONNECTION=database. Sin este contenedor los trabajos
+    # pendientes se acumulan y no se ejecutan nunca.
+    queue:
+        image: sail-8.5/app
+        depends_on:
+            laravel.test:
+                condition: service_started
+        entrypoint: ['php', 'artisan', 'queue:work', '--tries=3', '--verbose']
+        restart: unless-stopped
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+
+    # -------------------------------------------------------------- planificador
+    # routes/console.php cierra cada dia los chats que llevan mucho tiempo sin
+    # respuesta (chat:cerrar-inactivos). Es un proceso aparte del worker de cola:
+    # sin este, los chats viejos nunca se cierran.
+    scheduler:
+        image: sail-8.5/app
+        depends_on:
+            laravel.test:
+                condition: service_started
+        entrypoint: ['php', 'artisan', 'schedule:work']
+        restart: unless-stopped
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+
     pgsql:
         image: 'postgres:18-alpine'
         ports:

@@ -188,13 +188,20 @@
             </div>
         @endif
 
-        {{-- Cita de validación --}}
+        {{-- Cita de validación. El PR #20 cambio el modelo: ahora la cita es del
+     estudiante (cit_usu_id) y su texto libre esta en cit_motivo. El lugar se
+     guarda en cit_lugar, columna que esa migracion dejo de crear, asi que solo
+     se muestra si la columna sigue existiendo en la base de quien tenga el
+     esquema viejo. --}}
         @if($solicitud->cita)
             <div style="margin-bottom: 24px; padding: 16px; background: #e8f5e9; border-radius: var(--radius); border-left: 4px solid #22a35a;">
                 <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: #14683a;">Cita de validación asignada</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 0.88rem;">
                     <div><strong>Fecha y hora:</strong> {{ $solicitud->cita->cit_fecha_hora->format('d/m/Y H:i') }}</div>
-                    <div><strong>Lugar:</strong> {{ $solicitud->cita->cit_lugar ?? '—' }}</div>
+                    <div><strong>Motivo:</strong> {{ $solicitud->cita->cit_motivo ?? '—' }}</div>
+                    @if (\Illuminate\Support\Facades\Schema::hasColumn('citas', 'cit_lugar'))
+                        <div><strong>Lugar:</strong> {{ $solicitud->cita->cit_lugar ?? '—' }}</div>
+                    @endif
                     <div><strong>Estado:</strong> <span style="text-transform: capitalize;">{{ $solicitud->cita->cit_estado }}</span></div>
                 </div>
             </div>

@@ -50,16 +50,78 @@ El sistema toma la paleta del homepage para que ambos se vean como una sola marc
 
 ### Puesta en marcha
 
+El proyecto corre sobre **Laravel Sail**. Con `up -d` ya queda todo listo: el compose aplica
+las migraciones y llena la base, así que no hay pasos manuales que alguien se salte.
+
 ```bash
-docker compose up -d
-docker exec -it <contenedor-laravel> sh -c "cd /var/www/html && php artisan migrate --seed"
+# 1. Preparar el .env (en Linux: cp .env.example .env)
+copy .env.example .env
+
+# 2. Sail necesita vendor/ en el equipo
+composer install
+
+# 3. Levantar (en Linux: ./vendor/bin/sail up -d)
+vendor\bin\sail.bat up -d
 ```
 
-Cuentas de demostración (contraseña `password`): `patricia.medina@demo.test` (administradora) y
-`luis.fernandez3@demo.test` (estudiante con solicitudes).
+El sitio queda en **http://localhost** y la base en el puerto **5432**.
+
+Si tu `.env` se queda sin `APP_KEY`, en el primer arranque:
 
 ```bash
-docker exec -it <contenedor-laravel> sh -c "cd /var/www/html && php artisan test"
+vendor\bin\sail.bat artisan key:generate
+```
+
+Para trabajar con recarga en caliente de Vite, en otra terminal:
+
+```bash
+vendor\bin\sail.bat npm run dev     # http://localhost:5173
+```
+
+Tests:
+
+```bash
+vendor\bin\sail.bat artisan test
+```
+
+#### Cuentas de ejemplo
+
+Las crea `db:seed`, que corre solo al arrancar. La contraseña de todas es `password`.
+
+| Rol | Correo |
+|---|---|
+| Administrador | `admin@uptp.test` |
+| Analista | `analista@uptp.test` |
+| Taquillero | `taquillero@uptp.test` |
+| Estudiantes | `maria.perez@ejemplo.com`, `carlos.gomez@ejemplo.com`, `andreina.rojas@ejemplo.com`, `luis.fernandez@ejemplo.com` |
+
+Son datos de desarrollo, no reales. Para una base nueva:
+
+```bash
+vendor\bin\sail.bat down -v          # borra la base y la vuelve a crear
+vendor\bin\sail.bat up -d
+```
+
+#### Si algo falla
+
+**`Connection refused` o `no se pudo resolver el host pgsql`.** El `DB_HOST` quedó en
+`127.0.0.1`, que dentro del contenedor es el propio contenedor. Debe ser `pgsql`.
+
+**El puerto 5432 ya está ocupado.** Sail publica la base ahí por defecto. Si tienes un
+PostgreSQL local, agrega `FORWARD_DB_PORT=5433` a tu `.env` y ya. El 5433 es solo el
+puerto del host; dentro del contenedor sigue siendo 5432 y no hay que cambiar nada más.
+
+**Faltan tablas o datos.** Revisa que los servicios de una sola vez hayan terminado bien:
+
+```bash
+vendor\bin\sail.bat ps -a          # migrate y seed deben salir con exit 0
+```
+
+Si un PR nuevo trajo migraciones y quieres aplicarlas sin reiniciar todo:
+
+```bash
+vendor\bin\sail.bat artisan migrate --force
+vendor\bin\sail.bat artisan db:seed --force
 ```
 
 ## About Laravel
