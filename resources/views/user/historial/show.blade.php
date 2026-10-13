@@ -192,7 +192,10 @@
                 @if ($solicitud->cita)
                     <p class="panel__hint-texto">
                         {{ $solicitud->cita->cit_fecha_hora->format('d/m/Y \a \l\a\s H:i') }}
-                        @if ($solicitud->cita->cit_lugar)
+                        @if ($solicitud->cita->cit_motivo)
+                            &middot; {{ $solicitud->cita->cit_motivo }}
+                        @endif
+                        @if (\Illuminate\Support\Facades\Schema::hasColumn('citas', 'cit_lugar') && $solicitud->cita->cit_lugar)
                             &middot; {{ $solicitud->cita->cit_lugar }}
                         @endif
                         &middot;
